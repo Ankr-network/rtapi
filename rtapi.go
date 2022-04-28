@@ -50,6 +50,7 @@ type splunkSettings struct {
 	Url     string `json:"url" yaml:"url"`
 	Authkey string `json:"authkey" yaml:"authkey"`
 	Source  string `json:"source" yaml:"source"`
+	Host    string `json:"host" yaml:"host"`
 }
 
 type splunkEvent struct {
@@ -363,12 +364,15 @@ func printText(endpoints []endpointDetails) {
 func sendJsonToSplunk(endpoints []endpointDetails, splunkSettings splunkSettings) {
 	for i := range endpoints {
 		now := time.Now()
-		name, err := os.Hostname()
-		if err != nil {
-			panic(err)
-		}
+		//if err != nil {
+		        //name, err := os.Hostname()
+		        //if err != nil {
+		//	        panic(err)
+		        //}
+                //}
 
-		var splunkMessage = splunkEvent{now.Unix(), name, splunkSettings.Source, endpoints[i]}
+		//var splunkMessage = splunkEvent{now.Unix(), name, splunkSettings.Source, endpoints[i]}
+		var splunkMessage = splunkEvent{now.Unix(), splunkSettings.Host, splunkSettings.Source, endpoints[i]}
 		jsonInfo, _ := json.Marshal(splunkMessage)
 		var jsonStr = []byte(jsonInfo)
 
