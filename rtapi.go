@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+        "net"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -97,6 +98,11 @@ func main() {
 			Aliases: []string{"q"},
 			Usage:   "don't show progress bar",
 		},
+		&cli.BoolFlag{
+			Name:    "ipaddr",
+			Aliases: []string{"I"},
+			Usage:   "use IP address instead of host for Splunk",
+		},
 	}
 
 	app := &cli.App{
@@ -164,9 +170,16 @@ func main() {
 				printJson(endpointList)
 			}
 
-			if c.IsSet("splunk") {
-				sendJsonToSplunk(endpointList, splunkSettings)
+                        if c.IsSet("splunk") {
+                                // Use IP Address instead of hostname for value of host when sending to splunk
+                                //
+                                //if c.IsSet("ipaddr") {
+				//        sendJsonToSplunk(endpointList, splunkSettings, true)
+                                //}
+				//sendJsonToSplunk(endpointList, splunkSettings, false)
+				sendJsonToSplunk(endpointList, splunkSettings, c.IsSet("ipaddr"))
 			}
+
 			return nil
 		},
 	}
@@ -174,6 +187,18 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func GetOutboundIP() net.IP {
+    conn, err := net.Dial("udp", "1.1.1.1:80")
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer conn.Close()
+
+    localAddr := conn.LocalAddr().(*net.UDPAddr)
+
+    return localAddr.IP
 }
 
 func parseEndpointsJSON(file string) []endpointDetails {
@@ -361,9 +386,10 @@ func printText(endpoints []endpointDetails) {
 	os.Stdout.Write([]byte(text[3]))
 }
 
-func sendJsonToSplunk(endpoints []endpointDetails, splunkSettings splunkSettings) {
+func sendJsonToSplunk(endpoints []endpointDetails, splunkSettings splunkSettings, useIP bool) {
 	for i := range endpoints {
 		now := time.Now()
+                LocalIP := GetOutboundIP().String()
 		//if err != nil {
 		        //name, err := os.Hostname()
 		        //if err != nil {
@@ -372,7 +398,11 @@ func sendJsonToSplunk(endpoints []endpointDetails, splunkSettings splunkSettings
                 //}
 
 		//var splunkMessage = splunkEvent{now.Unix(), name, splunkSettings.Source, endpoints[i]}
-		var splunkMessage = splunkEvent{now.Unix(), splunkSettings.Host, splunkSettings.Source, endpoints[i]}
+                var splunkMessage = splunkEvent{now.Unix(), splunkSettings.Host, splunkSettings.Source, endpoints[i]}
+                if useIP {
+		        splunkMessage = splunkEvent{now.Unix(), LocalIP, splunkSettings.Source, endpoints[i]}
+                }
+		//var splunkMessage = splunkEvent{now.Unix(), LocalIP, splunkSettings.Source, endpoints[i]}
 		jsonInfo, _ := json.Marshal(splunkMessage)
 		var jsonStr = []byte(jsonInfo)
 
