@@ -1,5 +1,6 @@
 {
     "url":"https://example.com/hec/services/collector/event",
     "authkey":"Splunk xyz",
-    "source": "rtapi for splunk by PeaStew"
+    "source": "rtapi for splunk by PeaStew",
+    "host": "whatever hostname you want"
 }
